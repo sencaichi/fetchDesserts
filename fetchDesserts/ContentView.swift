@@ -7,6 +7,8 @@
 
 import SwiftUI
 
+// model the data to be decoded
+// nested json data addressed on line 44
 struct Meal: Codable {
         let strMeal: String
         let strMealThumb: String
@@ -30,7 +32,7 @@ struct ContentView: View {
             }
         }
     }
-    
+    // fetch data from endpoint
     func fetchData() async {
         guard let url = URL(string: "https://themealdb.com/api/json/v1/1/filter.php?c=Dessert") else {
             print("This URL does not work.")
@@ -38,7 +40,9 @@ struct ContentView: View {
         }
         do {
             let (data, _) = try await URLSession.shared.data(from: url)
+            // decode json data
             let decodedResponse = try JSONDecoder().decode([String: [Meal]].self, from: data)
+            // decodedResponse["meals"] because of nested JSON object
                 meals = decodedResponse["meals"] ?? []
         } catch {
             print("Issue with data.")
