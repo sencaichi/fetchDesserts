@@ -9,6 +9,7 @@ import SwiftUI
 
 // model the data to be decoded
 // nested json data addressed on line 44
+// considering using classes for objective-c interoperability
 struct Meal: Codable {
         let strMeal: String
         let strMealThumb: String
@@ -21,9 +22,17 @@ struct ContentView: View {
     var body: some View {
         NavigationView {
             List(meals, id: \.idMeal) { meal in VStack(alignment: .leading) {
+                AsyncImage(url: URL(string: meal.strMealThumb))
+                { image in
+                    image.resizable()
+                    // placeholder until image loads
+                } placeholder: {
+                    ProgressView()
+                }
+                .frame(width: 150, height: 150)
                 Text(meal.strMeal)
                     .font(.headline)
-                    .foregroundColor(.blue)
+                    .foregroundColor(.black)
             }
             }
             .navigationTitle("Desserts")
