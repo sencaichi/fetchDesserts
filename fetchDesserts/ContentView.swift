@@ -9,7 +9,7 @@ import SwiftUI
 
 // model the data to be decoded
 // nested json data addressed on line 44
-// considering using classes for objective-c interoperability
+// consider using classes for objective-c interoperability
 struct Meal: Codable, Hashable {
         let strMeal: String
         let strMealThumb: String
@@ -72,116 +72,6 @@ struct MealDetails: Codable, Hashable {
     let dateModified: String?
 }
 
-extension String {
-    
-    public var isNotEmpty: Bool {
-        
-        return !self.isEmpty
-    }
-}
-
-//extension MutableCollection {
-//
-//    /// Returns the element at the specified index iff it is within count, otherwise nil.
-//    subscript (safe index: Index) -> Element? {
-//        get {
-//            indices.contains(index) ? self[index] : nil
-//        }
-//        mutating set {
-//            if indices.contains(index), let value = newValue {
-//                self[index] = value
-//            }
-//        }
-//    }
-//}
-
-struct DetailView: View {
-    let idMeal: String
-    @State var details = [MealDetails]()
-    
-    var body: some View {
-        List {
-            VStack(alignment: .leading) {
-                ForEach(details, id: \.idMeal) { detail in
-                    Text(detail.strMeal)
-                    AsyncImage(url: URL(string: detail.strMealThumb))
-                    { image in
-                        image.resizable()
-                        // placeholder until image loads
-                    } placeholder: {
-                        ProgressView()
-                    }
-                    .frame(width: 150, height: 150)
-                    Text(detail.strInstructions!)
-                    ForEach(1...20, id: \.self) {
-                        index in
-                        let ingredientKey = "strIngredient\(index)"
-                        let ingredientValue = value(for: ingredientKey, in: detail) // Access property dynamically
-                        
-                        // Match and concatenate values
-                        let measureKey = "strMeasure\(index)"
-                        let measureValue = value(for: measureKey, in: detail) // Access property dynamically
-                        
-                        let combinedValue = measureValue + ingredientValue
-                        
-                        Text(combinedValue)
-                    }
-                }
-            }
-        }
-            .task {
-                await fetchDetails(id: idMeal)
-            }
-        }
-        
-        func fetchDetails(id: String) async {
-            guard let url = URL(string: "https://themealdb.com/api/json/v1/1/lookup.php?i=" + id)
-            else {
-                print("This URL does not work.")
-                return
-            }
-            print(url)
-            do {
-                let (detailData, _) = try await URLSession.shared.data(from: url)
-                // decode json data
-                let decodedResp = try JSONDecoder().decode([String: [MealDetails]].self, from: detailData)
-                // decodedResponse["meals"] because of nested JSON object
-                details = decodedResp["meals"] ?? []
-                
-            } catch {
-                print("Issue with data.")
-            }
-        }
-    
-    func value(for key: String, in object: Any) -> String {
-            let mirror = Mirror(reflecting: object)
-            
-            for child in mirror.children {
-                if let label = child.label, label == key {
-                    print(child.value)
-                    if let value = child.value as? String {
-                        return value
-                    }
-                }
-            }
-            
-            return ""
-        }
-    }
-
-
-//struct Ingredients: View {
-//    var detail:
-//
-//    var body: some View {
-//        List {
-//            ForEach(1...9, id: \.self) {i in
-//                print(detail["strIngredient\(i)"]?)
-//            }
-//        }
-//    }
-//}
-
 
 // for different iOS versions
 //struct MyNavigation<Content>: View where Content: View {
@@ -197,12 +87,15 @@ struct DetailView: View {
 //}
 
 struct ContentView: View {
+    // assign an instance of Meal to state
     @State var meals = [Meal]()
     
     var body: some View {
         NavigationView {
+            // write a function (below) that will fetch data from the endpoint and then iterate through the response
             List(meals, id: \.idMeal) { meal in
                 VStack(alignment: .leading) {
+                    // link to the detailed view
                     NavigationLink(destination: DetailView(idMeal: meal.idMeal)) {
                         AsyncImage(url: URL(string: meal.strMealThumb))
                         { image in
@@ -242,6 +135,90 @@ struct ContentView: View {
             }
         }
 }
+
+struct DetailView: View {
+    let idMeal: String
+    @State var details = [MealDetails]()
+    
+    var body: some View {
+        List {
+            VStack(alignment: .center) {
+                // iterate through details and display values
+                ForEach(details, id: \.idMeal) { detail in
+                    Text(detail.strMeal)
+                        .font(.title)
+                    AsyncImage(url: URL(string: detail.strMealThumb))
+                    { image in
+                        image.resizable()
+                        // placeholder until image loads
+                    } placeholder: {
+                        ProgressView()
+                    }
+                    .frame(width: 200, height: 200)
+                    Text("Instructions")
+                        .font(.headline)
+                        .padding(2)
+                    Text(detail.strInstructions!)
+                        .padding(2)
+                    Text("Ingredients")
+                        .font(.headline)
+                        .padding(2)
+                    // loop through the object twenty times, concating the measure values to the ingredient values
+                    ForEach(1...20, id: \.self) {
+                        index in
+                        let ingredientKey = "strIngredient\(index)"
+                        let ingredientValue = value(for: ingredientKey, in: detail) // access property dynamically
+                        
+                        // match and concatenate values
+                        let measureKey = "strMeasure\(index)"
+                        let measureValue = value(for: measureKey, in: detail)
+                        
+                        let combinedValue = measureValue + ingredientValue
+                        
+                        Text(combinedValue)
+                    }
+                }
+            }
+        }
+            .task {
+                await fetchDetails(id: idMeal)
+            }
+        }
+        
+        func fetchDetails(id: String) async {
+            guard let url = URL(string: "https://themealdb.com/api/json/v1/1/lookup.php?i=" + id)
+            else {
+                print("This URL does not work.")
+                return
+            }
+            print(url)
+            do {
+                let (detailData, _) = try await URLSession.shared.data(from: url)
+                // decode json data
+                let decodedResp = try JSONDecoder().decode([String: [MealDetails]].self, from: detailData)
+                // decodedResponse["meals"] because of nested JSON object
+                details = decodedResp["meals"] ?? []
+                
+            } catch {
+                print("Issue with data.")
+            }
+        }
+    
+    func value(for key: String, in object: Any) -> String {
+            let mirror = Mirror(reflecting: object)
+            
+            for child in mirror.children {
+                if let label = child.label, label == key {
+                    print(child.value)
+                    if let value = child.value as? String {
+                        return value + " "
+                    }
+                }
+            }
+            
+            return ""
+        }
+    }
 
 struct ContentView_Previews: PreviewProvider {
     static var previews: some View {
