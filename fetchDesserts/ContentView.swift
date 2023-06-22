@@ -18,34 +18,34 @@ struct Meal: Codable, Hashable {
 
 struct MealDetails: Codable, Hashable {
     let idMeal: String
-    let strMeal: String
+    var strMeal: String
     let strDrinkAlternate: String?
     let strCategory: String?
     let strArea: String?
-    let strInstructions: String?
-    let strMealThumb: String
+    var strInstructions: String?
+    var strMealThumb: String
     let strTags: String?
     let strYoutube: String?
-    let strIngredient1: String?
-    let strIngredient2: String?
-    let strIngredient3: String?
-    let strIngredient4: String?
-    let strIngredient5: String?
-    let strIngredient6: String?
-    let strIngredient7: String?
-    let strIngredient8: String?
-    let strIngredient9: String?
-    let strIngredient10: String?
-    let strIngredient11: String?
-    let strIngredient12: String?
-    let strIngredient13: String?
-    let strIngredient14: String?
-    let strIngredient15: String?
-    let strIngredient16: String?
-    let strIngredient17: String?
-    let strIngredient18: String?
-    let strIngredient19: String?
-    let strIngredient20: String?
+    var strIngredient1: String?
+    var strIngredient2: String?
+    var strIngredient3: String?
+    var strIngredient4: String?
+    var strIngredient5: String?
+    var strIngredient6: String?
+    var strIngredient7: String?
+    var strIngredient8: String?
+    var strIngredient9: String?
+    var strIngredient10: String?
+    var strIngredient11: String?
+    var strIngredient12: String?
+    var strIngredient13: String?
+    var strIngredient14: String?
+    var strIngredient15: String?
+    var strIngredient16: String?
+    var strIngredient17: String?
+    var strIngredient18: String?
+    var strIngredient19: String?
+    var strIngredient20: String?
     let strMeasure1: String?
     let strMeasure2: String?
     let strMeasure3: String?
@@ -72,49 +72,115 @@ struct MealDetails: Codable, Hashable {
     let dateModified: String?
 }
 
-struct DetailView: View {
-    let idMeal: String
-    @State private var details = [MealDetails]()
+extension String {
     
-    var body: some View {
-        List(details, id: \.idMeal) { detail in
-            VStack {
-                AsyncImage(url: URL(string: detail.strMealThumb))
-                { image in
-                    image.resizable()
-                // placeholder until image loads
-                } placeholder: {
-                    ProgressView()
-                }
-                .frame(width: 150, height: 150)
-                Text(detail.strInstructions!)
-                
-            }
-        }
-        .navigationTitle("Details")
-        .task {
-            await fetchDetails(id: idMeal)
-        }
-    }
-    
-    func fetchDetails(id: String) async {
-        guard let url = URL(string: "https://themealdb.com/api/json/v1/1/lookup.php?i=" + id)
-        else {
-            print("This URL does not work.")
-            return
-        }
-        print(url)
-        do {
-            let (detailData, _) = try await URLSession.shared.data(from: url)
-            // decode json data
-            let decodedResp = try JSONDecoder().decode([String: [MealDetails]].self, from: detailData)
-            // decodedResponse["meals"] because of nested JSON object
-            details = decodedResp["meals"] ?? []
-        } catch {
-            print("Issue with data.")
-        }
+    public var isNotEmpty: Bool {
+        
+        return !self.isEmpty
     }
 }
+
+//extension MutableCollection {
+//
+//    /// Returns the element at the specified index iff it is within count, otherwise nil.
+//    subscript (safe index: Index) -> Element? {
+//        get {
+//            indices.contains(index) ? self[index] : nil
+//        }
+//        mutating set {
+//            if indices.contains(index), let value = newValue {
+//                self[index] = value
+//            }
+//        }
+//    }
+//}
+
+struct DetailView: View {
+    let idMeal: String
+    @State var details = [MealDetails]()
+    
+    var body: some View {
+        List {
+            VStack(alignment: .leading) {
+                ForEach(details, id: \.idMeal) { detail in
+                    Text(detail.strMeal)
+                    AsyncImage(url: URL(string: detail.strMealThumb))
+                    { image in
+                        image.resizable()
+                        // placeholder until image loads
+                    } placeholder: {
+                        ProgressView()
+                    }
+                    .frame(width: 150, height: 150)
+                    Text(detail.strInstructions!)
+                    ForEach(1...20, id: \.self) {
+                        index in
+                        let ingredientKey = "strIngredient\(index)"
+                        let ingredientValue = value(for: ingredientKey, in: detail) // Access property dynamically
+                        
+                        // Match and concatenate values
+                        let measureKey = "strMeasure\(index)"
+                        let measureValue = value(for: measureKey, in: detail) // Access property dynamically
+                        
+                        let combinedValue = measureValue + ingredientValue
+                        
+                        Text(combinedValue)
+                    }
+                }
+            }
+        }
+            .task {
+                await fetchDetails(id: idMeal)
+            }
+        }
+        
+        func fetchDetails(id: String) async {
+            guard let url = URL(string: "https://themealdb.com/api/json/v1/1/lookup.php?i=" + id)
+            else {
+                print("This URL does not work.")
+                return
+            }
+            print(url)
+            do {
+                let (detailData, _) = try await URLSession.shared.data(from: url)
+                // decode json data
+                let decodedResp = try JSONDecoder().decode([String: [MealDetails]].self, from: detailData)
+                // decodedResponse["meals"] because of nested JSON object
+                details = decodedResp["meals"] ?? []
+                
+            } catch {
+                print("Issue with data.")
+            }
+        }
+    
+    func value(for key: String, in object: Any) -> String {
+            let mirror = Mirror(reflecting: object)
+            
+            for child in mirror.children {
+                if let label = child.label, label == key {
+                    print(child.value)
+                    if let value = child.value as? String {
+                        return value
+                    }
+                }
+            }
+            
+            return ""
+        }
+    }
+
+
+//struct Ingredients: View {
+//    var detail:
+//
+//    var body: some View {
+//        List {
+//            ForEach(1...9, id: \.self) {i in
+//                print(detail["strIngredient\(i)"]?)
+//            }
+//        }
+//    }
+//}
 
 
 // for different iOS versions
@@ -131,7 +197,7 @@ struct DetailView: View {
 //}
 
 struct ContentView: View {
-    @State private var meals = [Meal]()
+    @State var meals = [Meal]()
     
     var body: some View {
         NavigationView {
